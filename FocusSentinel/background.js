@@ -1,31 +1,69 @@
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete" && tab.url) {
-    chrome.storage.local.get(["userGoal", "taskDone"], (data) => {
-      const taskDone = data.taskDone === true;
-      const isWorkRelated = isWorkTab(tab.url);
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status !== "complete" || !tab.url) return;
 
-      if (!taskDone && !isWorkRelated && isDistractionSite(tab.url)) {
-        chrome.scripting.executeScript({
-          target: { tabId },
-          func: blockPage
-        });
-      }
+  chrome.storage.local.get(["blockedSites"], (data) => {
+    const now = new Date();
+    const blockedSites = data.blockedSites || [];
+
+    const matched = blockedSites.find(site => tab.url.includes(site.url));
+
+    if (matched) {
+      if (matched.unblockTime && new Date(matched.unblockTime) <= now) return;
+
+      chrome.scripting.executeScript({
+        target: { tabId },
+        func: renderBlockPage,
+        args: [matched.url, !!matched.password]
+      });
+    }
+  });
+});
+
+function renderBlockPage(site, hasPassword) {
+  const container = document.createElement("div");
+  container.style = `
+    position:fixed;top:0;left:0;right:0;bottom:0;
+    background:#f8d7da;color:#721c24;display:flex;
+    align-items:center;justify-content:center;flex-direction:column;
+    font-family:sans-serif;z-index:999999;
+  `;
+  container.innerHTML = `
+    <h2>🚫 ${site} is blocked!</h2>
+    ${hasPassword ? `
+      <p>Enter password to unlock:</p>
+      <input type="password" id="unlock-pass" style="padding:5px;margin-bottom:10px;" />
+      <button id="unlock-btn">Unlock</button>
+    ` : `
+    `}
+  `;
+  document.body.innerHTML = '';
+  document.body.appendChild(container);
+
+  if (hasPassword) {
+    document.getElementById("unlock-btn").onclick = () => {
+      const input = document.getElementById("unlock-pass").value;
+      chrome.runtime.sendMessage({ type: "checkPassword", site, input });
+    };
+  } else {
+    document.getElementById("unblock-now").onclick = () => {
+      chrome.runtime.sendMessage({ type: "unblockSite", site });
+    };
+  }
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "unblockSite" || message.type === "checkPassword") {
+    chrome.storage.local.get(["blockedSites"], (data) => {
+      const blockedSites = data.blockedSites || [];
+      const newList = blockedSites.filter(site => {
+        if (site.url !== message.site) return true;
+        if (message.type === "checkPassword" && site.password !== message.input) return true;
+        return false;
+      });
+
+      chrome.storage.local.set({ blockedSites: newList }, () => {
+        chrome.tabs.reload(sender.tab.id);
+      });
     });
   }
 });
-
-function isDistractionSite(url) {
-  const distractions = ["youtube.com", "facebook.com", "twitter.com", "reddit.com"];
-  return distractions.some(site => url.includes(site));
-}
-
-function blockPage() {
-  document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-size:24px;text-align:center;padding:20px;color:red">
-    🚫 Stay Focused! Complete your task first.
-  </div>`;
-}
-
-function isWorkTab(url) {
-  const workKeywords = ["docs", "notion", "gmail", "stackoverflow", "github", "zoom"];
-  return workKeywords.some(keyword => url.includes(keyword));
-}

@@ -8,78 +8,64 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #f8f9fa;
       padding: 20px;
-      width: 300px;
-      box-sizing: border-box;
+      width: 320px;
     }
 
-    h2 {
+    h2, h4 {
       text-align: center;
-      margin-bottom: 20px;
       color: #343a40;
     }
 
-    label {
-      font-size: 14px;
-      font-weight: 600;
-      color: #495057;
-    }
-
-    textarea {
+    textarea, input {
       width: 100%;
-      min-height: 100px;
-      padding: 10px;
-      margin-top: 5px;
-      font-size: 14px;
+      padding: 8px;
+      margin-top: 6px;
+      margin-bottom: 10px;
       border: 1px solid #ced4da;
-      border-radius: 6px;
-      resize: none;
-      background-color: #fff;
+      border-radius: 4px;
+      font-size: 14px;
     }
 
     button {
       width: 100%;
-      margin-top: 10px;
       padding: 10px;
       font-size: 14px;
+      margin-bottom: 10px;
       border: none;
-      border-radius: 6px;
+      border-radius: 5px;
       cursor: pointer;
-      transition: background-color 0.2s ease;
     }
 
-    #save {
-      background-color: #007bff;
-      color: #fff;
-    }
-
-    #save:hover {
-      background-color: #0056b3;
-    }
-
-    #complete {
-      background-color: #28a745;
-      color: #fff;
-    }
-
-    #complete:hover {
-      background-color: #1e7e34;
-    }
-
-    .note {
-      font-size: 12px;
-      color: #868e96;
-      text-align: center;
-      margin-top: 12px;
-    }
+    #save { background-color: #007bff; color: white; }
+    #complete { background-color: #28a745; color: white; }
+    #add-block { background-color: #dc3545; color: white; }
   </style>
 </head>
 <body>
   <h2>🧠 FocusSentinel</h2>
-  <label for="goal">Current Task:</label>
-  <textarea id="goal" placeholder="Type what you're focusing on..."></textarea>
+
+  <label>Focus Task:</label>
+  <textarea id="goal" placeholder="What are you focusing on?"></textarea>
   <button id="save">💾 Save Task</button>
   <button id="complete">✅ Mark as Done</button>
-  <div class="note">Distraction sites are blocked until task is done.</div>
+
+  <hr>
+  <h4>🔒 Block a Website</h4>
+  <label>Website URL:</label>
+  <input id="block-url" type="text" placeholder="e.g. facebook.com" />
+
+  <label>Password (optional):</label>
+  <input id="block-password" type="password" />
+
+  <label>Unblock Time (optional):</label>
+  <input id="block-time" type="datetime-local" />
+
+  <button id="add-block">➕ Add Block</button>
+
+  <hr>
+  <h4>📋 Blocked Sites</h4>
+  <ul id="blocked-list" style="list-style:none;padding:0;margin:0;"></ul>
+
   <script src="popup.js"></script>
 </body>
 </html>
